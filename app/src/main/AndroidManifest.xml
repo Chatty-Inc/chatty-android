@@ -11,8 +11,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".ErrorViewer"></activity>
+        <activity android:name=".UserManagement"></activity>
+        <activity android:name=".ErrorViewer" />
         <activity android:name=".Messages" />
+        <activity
+            android:name=".LoginPage"
+            android:label="@string/app_name" />
         <activity
             android:name=".MainActivity"
             android:launchMode="singleTop">

@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Chatty</string>
+
+    <string name="terms_and_conditions">Terms and Conditions:\n
+    By clicking on the button below, you agree to the\n
+    Chatty terms and conditions which can be found at\n
+    www.google.com</string>
 </resources>

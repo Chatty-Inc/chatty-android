@@ -5,69 +5,69 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.firebase.ui.auth.AuthUI
-import com.firebase.ui.auth.IdpResponse
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.*
+import kotlinx.android.synthetic.main.activity_main.*
 
 
 class MainActivity : AppCompatActivity() {
     private lateinit var ref: DatabaseReference
-    private val RC_SIGN_IN = 1822
+    private lateinit var rootRef: DatabaseReference
+    var data: ArrayList<List<String>> = ArrayList()
     private var user: FirebaseUser? = null
-    private val providers = arrayListOf(
-        AuthUI.IdpConfig.EmailBuilder().build(),
-        AuthUI.IdpConfig.PhoneBuilder().build(),
-        AuthUI.IdpConfig.GoogleBuilder().build(),
-        AuthUI.IdpConfig.GitHubBuilder().build()
-    )
 
-    private fun startAuthFlow() {
-        startActivityForResult(
-            AuthUI.getInstance()
-                .createSignInIntentBuilder()
-                .setAvailableProviders(providers)
-                .setTheme(R.style.SignInDark)
-                .build(),
-            RC_SIGN_IN
-        )
+    private fun updateUserlist() {
+        swipeRefreshLayout.isRefreshing = true
+        val postListener = object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                var useAdd = false
+                if (data.isEmpty()) {
+                    useAdd = true
+                }
+                var i =
+                    0 // .add won't work here as it'll just keep on adding and not delete old data
+                dataSnapshot.children.forEach {
+                    val dataList = it.value.toString().drop(1).dropLast(1)
+                        .split(", (?=([^\"]*\"[^\"]*\")*[^\"]*$)".toRegex()).toMutableList()
+                    dataList.add(it.key.toString()) // toString is safer than !!
+                    if (useAdd) {
+                        data.add(dataList)
+                    } else {
+                        data[i] = dataList
+                    }
+                    i += 1
+                }
+                userList.adapter?.notifyDataSetChanged()
+                swipeRefreshLayout.isRefreshing = false
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                // Getting Post failed, log a message
+                Snackbar.make(
+                    userList,
+                    "Failed to update data. Please try again later.",
+                    Snackbar.LENGTH_LONG
+                ).show()
+                swipeRefreshLayout.isRefreshing = false
+            }
+        }
+        rootRef.addListenerForSingleValueEvent(postListener)
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == RC_SIGN_IN) {
-            val response = IdpResponse.fromResultIntent(data)
-            if (resultCode == RESULT_OK) {
-                // Successfully signed in
-                user = FirebaseAuth.getInstance().currentUser
-                val database = FirebaseDatabase.getInstance()
-                if (user != null) {
-                    ref = database.getReference(user!!.uid)
-                    ref.updateChildren(
-                        mapOf(
-                            "uid" to user!!.uid.toString(),
-                            "name" to user!!.displayName.toString(),
-                            "email" to user!!.email.toString(),
-                            "photoURL" to user!!.photoUrl.toString(),
-                        )
-                    )
-                }
-            } else {
-                // Sign in failed. If response is null the user canceled the
-                // sign-in flow using the back button. Otherwise check
-                // response.getError().getErrorCode() and handle the error.
-                if (response == null) {
-                    // Try again until user signs in
-                    startAuthFlow()
-                } else {
-                    startActivity(
-                        Intent(this@MainActivity, ErrorViewer::class.java)
-                            .putExtra("error", response.error.toString())
-                    )
-                }
-            }
+    private fun initRecyclerView() {
+        updateUserlist()
+        // Creates a vertical Layout Manager
+        userList.apply {
+            this.layoutManager = LinearLayoutManager(this@MainActivity)
+            this.adapter = UserListUpdateAdapter(data, this@MainActivity)
+        }
+
+        swipeRefreshLayout.setOnRefreshListener {
+            updateUserlist()
         }
     }
 
@@ -79,11 +79,19 @@ class MainActivity : AppCompatActivity() {
         user = FirebaseAuth.getInstance().currentUser
         if (user != null) {
             // already signed in
+            val database = FirebaseDatabase.getInstance()
+            rootRef = database.reference
+            if (user != null) {
+                ref = database.getReference(user!!.uid)
+            }
 
+            initRecyclerView()
         } else {
-            // not signed in - Attempt to sign user in
-            // Firebase Auth UI
-            startAuthFlow()
+            // not signed in - start sign in Activity as the root activity
+            startActivity(
+                Intent(this@MainActivity, LoginPage::class.java)
+                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            )
         }
     }
 
@@ -104,8 +112,14 @@ class MainActivity : AppCompatActivity() {
                     .signOut(this)
                     .addOnCompleteListener {
                         // user is now signed out
+                        // Clear user list
+                        data.clear()
+                        userList.adapter?.notifyDataSetChanged()
                         // Relaunch sign in UI
-                        startAuthFlow()
+                        startActivity(
+                            Intent(this@MainActivity, LoginPage::class.java)
+                                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                        )
                     }
                 return true
             }
