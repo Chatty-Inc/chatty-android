@@ -2,8 +2,14 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/sign_out"
+        android:id="@+id/toolbar_profile_mgmt"
+        android:icon="@drawable/ic_round_person_24"
         android:orderInCategory="100"
+        android:title="profile"
+        app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/sign_out"
+        android:orderInCategory="101"
         android:title="Sign out"
         app:showAsAction="never" />
 </menu>

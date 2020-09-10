@@ -2,6 +2,7 @@ package com.mmm.chatty
 
 import android.content.Context
 import android.content.res.Resources
+import android.telephony.PhoneNumberUtils
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -43,7 +44,15 @@ class UserListUpdateAdapter(
     // Binds each row of data in the ArrayList to a view
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         if (userList[position][2].substringAfterLast("=") == "null") {
-            holder.username.text = userList[position][4].substringAfterLast("=")
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                holder.username.text = PhoneNumberUtils.formatNumber(
+                    userList[position][4].substringAfterLast("="),
+                    "SG"
+                )
+            } else {
+                holder.username.text =
+                    PhoneNumberUtils.formatNumber(userList[position][4].substringAfterLast("="))
+            }
         } else {
             holder.username.text = userList[position][2].substringAfterLast("=")
         }

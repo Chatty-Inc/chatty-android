@@ -20,29 +20,41 @@ class MainActivity : AppCompatActivity() {
     private lateinit var rootRef: DatabaseReference
     var data: ArrayList<List<String>> = ArrayList()
     private var user: FirebaseUser? = null
+    lateinit var tinyDB: TinyDB
+
+    private fun updateData(dataSnapshot: DataSnapshot) {
+        var useAdd = false
+        if (data.isEmpty()) {
+            useAdd = true
+        }
+        var i =
+            0 // .add won't work here as it'll just keep on adding and not delete old data
+        dataSnapshot.children.forEach {
+            val dataList = it.value.toString().drop(1).dropLast(1)
+                .split(", (?=([^\"]*\"[^\"]*\")*[^\"]*$)".toRegex()).toMutableList()
+            dataList.add(it.key.toString()) // toString is safer than !!
+            if (useAdd) {
+                data.add(dataList)
+            } else {
+                data[i] = dataList
+            }
+            i += 1
+        }
+        userList.adapter?.notifyDataSetChanged()
+    }
 
     private fun updateUserlist() {
         swipeRefreshLayout.isRefreshing = true
+        try {
+            //updateData(tinyDB.getObject("dataSnapshot", DataSnapshot::class.java))
+        } catch (e: NullPointerException) {
+
+        }
         val postListener = object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
-                var useAdd = false
-                if (data.isEmpty()) {
-                    useAdd = true
-                }
-                var i =
-                    0 // .add won't work here as it'll just keep on adding and not delete old data
-                dataSnapshot.children.forEach {
-                    val dataList = it.value.toString().drop(1).dropLast(1)
-                        .split(", (?=([^\"]*\"[^\"]*\")*[^\"]*$)".toRegex()).toMutableList()
-                    dataList.add(it.key.toString()) // toString is safer than !!
-                    if (useAdd) {
-                        data.add(dataList)
-                    } else {
-                        data[i] = dataList
-                    }
-                    i += 1
-                }
-                userList.adapter?.notifyDataSetChanged()
+                //tinyDB.putObject("dataSnapshot", dataSnapshot)
+                updateData(dataSnapshot)
+
                 swipeRefreshLayout.isRefreshing = false
             }
 
@@ -56,7 +68,7 @@ class MainActivity : AppCompatActivity() {
                 swipeRefreshLayout.isRefreshing = false
             }
         }
-        rootRef.addListenerForSingleValueEvent(postListener)
+        rootRef.addValueEventListener(postListener)
     }
 
     private fun initRecyclerView() {
@@ -92,6 +104,7 @@ class MainActivity : AppCompatActivity() {
                 ref = database.getReference(user!!.uid)
             }
 
+            tinyDB = TinyDB(applicationContext)
             initRecyclerView()
         } else {
             // not signed in - start sign in Activity as the root activity
@@ -128,7 +141,11 @@ class MainActivity : AppCompatActivity() {
                                 .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                         )
                     }
-                return true
+                true
+            }
+            R.id.toolbar_profile_mgmt -> {
+                startActivity(Intent(this@MainActivity, UserManagement::class.java))
+                true
             }
             else -> super.onOptionsItemSelected(item)
         }
