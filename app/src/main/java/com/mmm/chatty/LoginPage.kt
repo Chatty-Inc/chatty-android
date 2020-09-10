@@ -30,11 +30,11 @@ class LoginPage : AppCompatActivity() {
                 if (user != null) {
                     database.getReference(user.uid).updateChildren(
                         mapOf(
-                            "uid" to user.uid,
-                            "photoURL" to user.photoUrl.toString(),
-                            "phoneNo" to user.phoneNumber.toString(),
                             "email" to user.email.toString(),
                             "name" to user.displayName.toString(),
+                            "phoneNo" to user.phoneNumber.toString(),
+                            "photoURL" to user.photoUrl.toString(),
+                            "uid" to user.uid,
                         )
                     )
 

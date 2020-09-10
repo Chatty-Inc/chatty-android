@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.firebase.ui.auth.AuthUI
 import com.google.android.material.snackbar.Snackbar
@@ -64,6 +65,12 @@ class MainActivity : AppCompatActivity() {
         userList.apply {
             this.layoutManager = LinearLayoutManager(this@MainActivity)
             this.adapter = UserListUpdateAdapter(data, this@MainActivity)
+            this.addItemDecoration(
+                DividerItemDecoration(
+                    this.context,
+                    DividerItemDecoration.VERTICAL
+                )
+            )
         }
 
         swipeRefreshLayout.setOnRefreshListener {

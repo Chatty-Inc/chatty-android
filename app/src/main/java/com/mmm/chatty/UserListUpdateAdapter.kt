@@ -8,6 +8,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.recyclerview.widget.RecyclerView
 import com.squareup.picasso.Callback
 import com.squareup.picasso.Picasso
@@ -40,8 +42,13 @@ class UserListUpdateAdapter(
 
     // Binds each row of data in the ArrayList to a view
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.username.text = userList[position][2].substringAfterLast("=")
+        if (userList[position][2].substringAfterLast("=") == "null") {
+            holder.username.text = userList[position][4].substringAfterLast("=")
+        } else {
+            holder.username.text = userList[position][2].substringAfterLast("=")
+        }
 
+        // Profile pic loader
         Picasso.get().load(userList[position][0].substringAfterLast("photoURL=")).fit()
             .transform(
                 RoundedTransformation(
@@ -50,13 +57,26 @@ class UserListUpdateAdapter(
                 )
             ) // Get px from dp
             .into(holder.profilePic, object : Callback {
-                override fun onSuccess() {
-                    Log.d("Picasso", "Successfully loaded image")
-                }
+                override fun onSuccess() = Unit
 
                 override fun onError(e: Exception?) {
+                    // Load placeholder image
+                    holder.profilePic.setImageBitmap(
+                        RoundedTransformation(
+                            (400 * Resources.getSystem().displayMetrics.density).toInt(),
+                            0
+                        )
+                            .transform(
+                                ContextCompat.getDrawable(context, R.drawable.ic_user_placeholder)
+                                    ?.toBitmap()
+                            )
+                    )
+
                     if (e != null) {
-                        Log.d("Image URL", userList[position][0].substringAfterLast("photoURL="))
+                        Log.d(
+                            "Image URL",
+                            userList[position][0].substringAfterLast("photoURL=")
+                        )
                         Log.e("Picasso error", e.message.toString())
                     }
                 }
